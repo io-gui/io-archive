@@ -1,4 +1,4 @@
-import {html, IoElement} from "../../build/io.js";
+import {html, IoElement} from "../../src/io.js";
 import "./marked.min.js";
 
 export class IoMdView extends IoElement {
@@ -57,10 +57,6 @@ export class IoMdView extends IoElement {
         reflect: true
       }
     };
-  }
-  // TODO: unhack when attribute setting works
-  attributeChangedCallback(name, oldValue, newValue) {
-    this[name] = this.__props[name].type(newValue);
   }
   pathChanged() {
     const req = new XMLHttpRequest();
