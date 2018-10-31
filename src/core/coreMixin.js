@@ -58,7 +58,7 @@ export const IoCoreMixin = (superclass) => class extends superclass {
   set(prop, value) {
     let oldValue = this[prop];
     this[prop] = value;
-    if (oldValue !== value ) this.dispatchEvent(prop + '-set', {value: value, oldValue: oldValue}, false);
+    if (oldValue !== value) this.dispatchEvent(prop + '-set', {value: value, oldValue: oldValue}, false);
   }
   setProperties(props) {
 
@@ -86,7 +86,8 @@ export const IoCoreMixin = (superclass) => class extends superclass {
         if (this.__props[p].reflect) this.setAttribute(p, value);
         this.queue(this.__props[p].observer, p, value, oldValue);
         if (this.__props[p].observer) this.queue(this.__props[p].observer, p, value, oldValue);
-        if (this[p + 'Changed']) this.queue(p + 'Changed', p, value, oldValue);
+        // TODO: decouple observer and notify queue // if (this[p + 'Changed'])
+        this.queue(p + 'Changed', p, value, oldValue);
       }
 
       if (binding !== oldBinding) {
@@ -172,9 +173,10 @@ export const IoCoreMixin = (superclass) => class extends superclass {
       }
     }
   }
-  dispatchEvent(type, detail, bubbles = true, src = this) {
+  dispatchEvent(type, detail = {}, bubbles = true, src = this) {
     if (src instanceof HTMLElement || src === window) {
       HTMLElement.prototype.dispatchEvent.call(src, new CustomEvent(type, {
+        type: type,
         detail: detail,
         bubbles: bubbles,
         composed: true
@@ -206,10 +208,7 @@ export const IoCoreMixin = (superclass) => class extends superclass {
     if (typeof value == 'number' && typeof oldValue == 'number' && isNaN(value) && isNaN(oldValue)) {
       return;
     }
-    if (this.__observeQueue.indexOf('changed') === -1) {
-      this.__observeQueue.push('changed');
-    }
-    if (observer) {
+    if (observer && this[observer]) {
       if (this.__observeQueue.indexOf(observer) === -1) {
         this.__observeQueue.push(observer);
       }
@@ -217,6 +216,9 @@ export const IoCoreMixin = (superclass) => class extends superclass {
     this.__notifyQueue.push([prop + '-changed', {value: value, oldValue: oldValue}]);
   }
   queueDispatch() {
+    if (this.__observeQueue.length || this.__notifyQueue.length) {
+      this.__observeQueue.push('changed');
+    }
     for (let j = 0; j < this.__observeQueue.length; j++) {
       this[this.__observeQueue[j]]();
     }
@@ -234,6 +236,7 @@ IoCoreMixin.Register = function () {
   Object.defineProperty(this.prototype, '__protoFunctions', {value: new ProtoFunctions(this.prototype.__prototypes)});
   Object.defineProperty(this.prototype, '__protoListeners', {value: new ProtoListeners(this.prototype.__prototypes)});
 
+  // TODO: rewise
   Object.defineProperty(this.prototype, '__objectProps', {value: []});
   const ignore = [Boolean, String, Number, HTMLElement, Function];
   for (let prop in this.prototype.__props) {

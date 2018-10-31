@@ -1,4 +1,7 @@
 import {html, IoElement} from "../classes/element.js";
+import {ProtoConfig} from "../core/protoConfig.js";
+
+const __configMap = new WeakMap();
 
 export class IoObject extends IoElement {
   static get style() {
@@ -9,24 +12,27 @@ export class IoObject extends IoElement {
         flex: 0 0;
         line-height: 1em;
       }
-      :host > div {
-        display: flex;
+      :host > div.io-object-group {
+        font-weight: bold;
+      }
+      :host > div.io-object-prop {
+        display: flex !important;
         flex-direction: row;
       }
       :host > div > span {
         padding: 0 0.2em 0 0.5em;
         flex: 0 0 auto;
       }
-      :host > io-number {
+      :host > div > io-number {
         color: rgb(28, 0, 207);
       }
-      :host > io-string {
+      :host > div > io-string {
         color: rgb(196, 26, 22);
       }
-      :host > io-boolean {
+      :host > div > io-boolean {
         color: rgb(170, 13, 145);
       }
-      :host > io-option {
+      :host > div > io-option {
         color: rgb(32,135,0);
       }
     </style>`;
@@ -34,14 +40,16 @@ export class IoObject extends IoElement {
   static get properties() {
     return {
       value: Object,
-      props: Array,
-      configs: Object,
+      config: Object,
       expanded: {
         type: Boolean,
         reflect: true
       },
       label: String
     };
+  }
+  constructor(props) {
+    super(props);
   }
   connectedCallback() {
     super.connectedCallback();
@@ -78,82 +86,137 @@ export class IoObject extends IoElement {
       this.dispatchEvent('value-set', detail, false); // TODO
     }
   }
-  getPropConfigs(keys) {
-    let configs = {};
-
-    let proto = this.value.__proto__;
-    while (proto) {
-      let c = IoObjectConfig[proto.constructor.name];
-      if (c) configs = Object.assign(configs, c);
-      c = this.configs[proto.constructor.name];
-      if (c) configs = Object.assign(configs, c);
-      proto = proto.__proto__;
+  valueChanged() {
+    if (__configMap.has(this.value)) {
+      this.config = __configMap.get(this.value);
+    } else {
+      this.config = this.__proto__.__config.getConfig(this.value);
+      __configMap.set(this.value, this.config);
     }
-
-    let propConfigs = {};
-
-    for (let i = 0; i < keys.length; i++) {
-      let key = keys[i];
-      let value = this.value[key];
-      let type = typeof value;
-      let cstr = (value && value.constructor) ? value.constructor.name : 'null';
-
-      if (type == 'function') continue;
-
-      propConfigs[key] = {};
-
-      if (configs.hasOwnProperty('type:' + type)) {
-        propConfigs[key] = configs['type:' + type];
-      }
-      if (configs.hasOwnProperty('constructor:'+cstr)) {
-        propConfigs[key] = configs['constructor:'+cstr];
-      }
-      if (configs.hasOwnProperty('key:' + key)) {
-        propConfigs[key] = configs['key:' + key];
-      }
-      if (configs.hasOwnProperty('value:' + String(value))) {
-        propConfigs[key] = configs['value:' + String(value)];
-      }
-    }
-    return propConfigs;
   }
   changed() {
-    let label = this.label || this.value.constructor.name;
-    let elements = [['io-boolean', {true: '▾' + label, false: '▸' + label, value: this.bind('expanded')}]];
+    const types = this.config.types;
+    const groups = this.config.groups;
+    const label = this.label || this.value.constructor.name;
+    const elements = [['io-boolean', {true: '▾' + label, false: '▸' + label, value: this.bind('expanded')}]];
     if (this.expanded) {
-      let keys = [...Object.keys(this.value), ...Object.keys(this.value.__proto__)];
-      let proplist = this.props.length ? this.props : keys;
-      let configs = this.getPropConfigs(proplist);
-      for (let key in configs) {
-        // TODO: remove props keyword
-        if (configs[key]) {
-          let config = Object.assign({
-            tag: configs[key].tag,
-            value: this.value[key],
-            id: key,
-            'on-value-set': this._onValueSet
-          }, configs[key].props);
-          if (this.value.__props && this.value.__props[key] && this.value.__props[key].config) {
-            // TODO: test
-            config = Object.assign(config, this.value.__props[key].config);
+      for (let g in groups) {
+        if (Object.keys(groups).length > 1) elements.push(['div', {className: 'io-object-group'}, g]);
+        for (let p in groups[g]) {
+          const k = groups[g][p];
+          if (types[k]) {
+            const tag = types[k][0];
+            const protoConfig = types[k][1];
+            const itemConfig = {id: k, value: this.value[k], 'on-value-set': this._onValueSet};
+            elements.push(['div', {className: 'io-object-prop'}, [['span', types.label || k + ':'], [tag, Object.assign(itemConfig, protoConfig)]]]);
           }
-          elements.push(['div', [['span', config.label || key + ':'], [config.tag, config]]]);
         }
+
       }
     }
     this.template(elements);
   }
+  static get config() {
+    return {
+      types: {
+        'Object': {
+          'type:string': ['io-string', {}],
+          'type:number': ['io-number', {step: 0.01}],
+          'type:boolean': ['io-boolean', {}],
+          'type:object': ['io-object', {}],
+          'value:null': ['io-string', {}],
+          'value:undefined': ['io-string', {}],
+        },
+      },
+      groups: {
+        'Object': {
+          // 'properties': ['key:time'],
+          // 'meshes': ['constructor:Mesh'],
+          // 'truestrings': ['value:true', 'value:false'],
+          // 'hidden': ['type:function'],
+        },
+        'Node': {
+          'properties': [
+            'nodeValue', 'nodeType', 'nodeName', 'baseURI',
+          ],
+          'hierarchy': [
+            'isConnected', 'ownerDocument', 'parentNode', 'parentElement', 'childNodes',
+            'firstChild', 'lastChild', 'previousSibling', 'nextSibling',
+          ],
+          'hidden': [
+            'ELEMENT_NODE', 'ATTRIBUTE_NODE', 'TEXT_NODE', 'CDATA_SECTION_NODE',
+            'ENTITY_REFERENCE_NODE', 'ENTITY_NODE', 'PROCESSING_INSTRUCTION_NODE',
+            'COMMENT_NODE', 'DOCUMENT_NODE', 'DOCUMENT_TYPE_NODE', 'DOCUMENT_FRAGMENT_NODE',
+            'NOTATION_NODE', 'DOCUMENT_POSITION_DISCONNECTED', 'DOCUMENT_POSITION_PRECEDING',
+            'DOCUMENT_POSITION_FOLLOWING', 'DOCUMENT_POSITION_CONTAINS', 'DOCUMENT_POSITION_CONTAINED_BY',
+            'DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC',
+            'normalize', 'cloneNode', 'isEqualNode', 'isSameNode', 'compareDocumentPosition', 'contains',
+            'lookupPrefix', 'lookupNamespaceURI', 'isDefaultNamespace', 'insertBefore', 'appendChild',
+            'replaceChild', 'removeChild', 'hasChildNodes', 'getRootNode', 'textContent',
+          ],
+        },
+        'Element': {
+          'properties': [
+            'id', 'className',
+            'classList', 'attributes', 'localName', 'tagName', 'namespaceURI', 'prefix',
+          ],
+          'hierarchy': [
+            'shadowRoot', 'previousElementSibling', 'nextElementSibling', 'children',
+            'firstElementChild', 'lastElementChild', 'childElementCount', 'slot', 'assignedSlot',
+          ],
+          'style': [
+            'attributeStyleMap',
+          ],
+          'hidden': [
+            'innerHTML', 'outerHTML',
+            'onbeforecopy', 'onbeforecut', 'onbeforepaste',
+            'oncopy', 'oncut', 'onpaste', 'onsearch', 'onselectstart',
+            'onwebkitfullscreenchange', 'onwebkitfullscreenerror',
+          ],
+          'layout': [
+            'scrollTop', 'scrollLeft', 'scrollWidth', 'scrollHeight', 'clientTop', 'clientLeft', 'clientWidth', 'clientHeight',
+          ],
+        },
+        'HTMLElement': {
+          'properties': [
+            'title', 'hidden', 'tabIndex', 'draggable', 'contentEditable', 'isContentEditable',
+          ],
+          'style': [
+            'style',
+          ],
+          'layout': [
+            'offsetParent', 'offsetTop', 'offsetLeft', 'offsetWidth', 'offsetHeight',
+          ],
+          'hidden': [
+            'dataset', 'accessKey', 'nonce',
+            'innerText', 'outerText',
+            'onabort', 'onblur', 'oncancel', 'oncanplay',
+            'oncanplaythrough', 'onchange', 'onclick', 'onclose', 'oncontextmenu', 'oncuechange', 'ondblclick', 'ondrag',
+            'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'ondurationchange', 'onemptied',
+            'onended', 'onerror', 'onfocus', 'oninput', 'oninvalid', 'onkeydown', 'onkeypress', 'onkeyup', 'onload',
+            'onloadeddata', 'onloadedmetadata', 'onloadstart', 'onmousedown', 'onmouseenter', 'onmouseleave', 'onmousemove',
+            'onmouseout', 'onmouseover', 'onmouseup', 'onmousewheel', 'onpause', 'onplay', 'onplaying', 'onprogress',
+            'onratechange', 'onreset', 'onresize', 'onscroll', 'onseeked', 'onseeking', 'onselect', 'onstalled', 'onsubmit',
+            'onsuspend', 'ontimeupdate', 'ontoggle', 'onvolumechange', 'onwaiting', 'onwheel', 'onauxclick',
+            'ongotpointercapture', 'onlostpointercapture', 'onpointerdown', 'onpointermove', 'onpointerup', 'onpointercancel',
+            'onpointerover', 'onpointerout', 'onpointerenter', 'onpointerleave',
+          ],
+          'language': [
+            'inputMode', 'dir', 'lang', 'translate', 'spellcheck', 'autocapitalize',
+          ],
+        },
+      }
+    };
+  }
+  static get groups() {
+    return {
+    };
+  }
 }
 
-const IoObjectConfig = {
-  'Object' : {
-    'type:string': {tag: 'io-string', props: {}},
-    'type:number': {tag: 'io-number', props: {step: 0.01}},
-    'type:boolean': {tag: 'io-boolean', props: {}},
-    'type:object': {tag: 'io-object', props: {}},
-    'value:null': {tag: 'io-string', props: {}},
-    'value:undefined': {tag: 'io-string', props: {}}
-  }
+IoObject.Register = function() {
+  IoElement.Register.call(this);
+  Object.defineProperty(this.prototype, '__config', {value: new ProtoConfig(this.prototype.__prototypes)});
 };
 
 IoObject.Register();

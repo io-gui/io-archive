@@ -59,8 +59,8 @@ function defineProperties(prototype) {
         this.__props[prop].value = value;
         if (this.__props[prop].reflect) this.setAttribute(prop, this.__props[prop].value);
         if (isPublic) {
+          if (this[observer]) this[observer](value, oldValue);
           if (this.__props[prop].observer) this[this.__props[prop].observer](value, oldValue);
-          if (typeof this[observer] === 'function') this[observer](value, oldValue);
           this.changed();
           this.dispatchEvent(changeEvent, {value: value, oldValue: oldValue});
         }
@@ -322,7 +322,7 @@ const IoCoreMixin = (superclass) => class extends superclass {
   set(prop, value) {
     let oldValue = this[prop];
     this[prop] = value;
-    if (oldValue !== value ) this.dispatchEvent(prop + '-set', {value: value, oldValue: oldValue}, false);
+    if (oldValue !== value) this.dispatchEvent(prop + '-set', {value: value, oldValue: oldValue}, false);
   }
   setProperties(props) {
 
@@ -350,7 +350,8 @@ const IoCoreMixin = (superclass) => class extends superclass {
         if (this.__props[p].reflect) this.setAttribute(p, value);
         this.queue(this.__props[p].observer, p, value, oldValue);
         if (this.__props[p].observer) this.queue(this.__props[p].observer, p, value, oldValue);
-        if (this[p + 'Changed']) this.queue(p + 'Changed', p, value, oldValue);
+        // TODO: decouple observer and notify queue // if (this[p + 'Changed'])
+        this.queue(p + 'Changed', p, value, oldValue);
       }
 
       if (binding !== oldBinding) {
@@ -436,9 +437,10 @@ const IoCoreMixin = (superclass) => class extends superclass {
       }
     }
   }
-  dispatchEvent(type, detail, bubbles = true, src = this) {
+  dispatchEvent(type, detail = {}, bubbles = true, src = this) {
     if (src instanceof HTMLElement || src === window) {
       HTMLElement.prototype.dispatchEvent.call(src, new CustomEvent(type, {
+        type: type,
         detail: detail,
         bubbles: bubbles,
         composed: true
@@ -470,10 +472,7 @@ const IoCoreMixin = (superclass) => class extends superclass {
     if (typeof value == 'number' && typeof oldValue == 'number' && isNaN(value) && isNaN(oldValue)) {
       return;
     }
-    if (this.__observeQueue.indexOf('changed') === -1) {
-      this.__observeQueue.push('changed');
-    }
-    if (observer) {
+    if (observer && this[observer]) {
       if (this.__observeQueue.indexOf(observer) === -1) {
         this.__observeQueue.push(observer);
       }
@@ -481,6 +480,9 @@ const IoCoreMixin = (superclass) => class extends superclass {
     this.__notifyQueue.push([prop + '-changed', {value: value, oldValue: oldValue}]);
   }
   queueDispatch() {
+    if (this.__observeQueue.length || this.__notifyQueue.length) {
+      this.__observeQueue.push('changed');
+    }
     for (let j = 0; j < this.__observeQueue.length; j++) {
       this[this.__observeQueue[j]]();
     }
@@ -498,6 +500,7 @@ IoCoreMixin.Register = function () {
   Object.defineProperty(this.prototype, '__protoFunctions', {value: new ProtoFunctions(this.prototype.__prototypes)});
   Object.defineProperty(this.prototype, '__protoListeners', {value: new ProtoListeners(this.prototype.__prototypes)});
 
+  // TODO: rewise
   Object.defineProperty(this.prototype, '__objectProps', {value: []});
   const ignore = [Boolean, String, Number, HTMLElement, Function];
   for (let prop in this.prototype.__props) {
@@ -615,9 +618,11 @@ class IoElement extends IoCoreMixin(HTMLElement) {
   static get observedAttributes() { return this.prototype.__observedAttributes; }
   attributeChangedCallback(name, oldValue, newValue) {
     const type = this.__props[name].type;
-    if (type === Boolean && (newValue === null || newValue === '')) {
-      this[name] = newValue === '' ? true : false;
-    } else {
+    if (type === Boolean) {
+      if (newValue === null || newValue === '') {
+        this[name] = newValue === '' ? true : false;
+      }
+    } else if (type) {
       this[name] = type(newValue);
     }
   }
@@ -699,9 +704,6 @@ function initStyle(prototypes) {
  */
 
 const IoLiteMixin = (superclass) => class extends superclass {
-	constructor(initProps) {
-		super(initProps);
-	}
 	addEventListener(type, listener) {
 		this._listeners = this._listeners || {};
 		this._listeners[type] = this._listeners[type] || [];
@@ -716,11 +718,11 @@ const IoLiteMixin = (superclass) => class extends superclass {
 	removeEventListener(type, listener) {
 		if (this._listeners === undefined) return;
 		if (this._listeners[type] !== undefined) {
-			const index = this._listeners[type].indexOf(listener);
+			let index = this._listeners[type].indexOf(listener);
 			if (index !== -1) this._listeners[type].splice(index, 1);
 		}
 	}
-	dispatchEvent(type, detail) {
+	dispatchEvent(type, detail = {}) {
 		const event = {
 			path: [this],
 			target: this,
@@ -731,7 +733,9 @@ const IoLiteMixin = (superclass) => class extends superclass {
 			for (let i = 0, l = array.length; i < l; i ++) {
 				array[i].call(this, event);
 			}
-		} else if (this.parent && event.bubbles) ;
+		}
+		// TODO: bubbling
+		// else if (this.parent && event.bubbles) {}
 	}
 	defineProperties(props) {
 		if (!this.hasOwnProperty('_properties')) {
@@ -745,6 +749,10 @@ const IoLiteMixin = (superclass) => class extends superclass {
 			if (propDef === null || propDef === undefined) {
 				propDef = {value: propDef};
 			} else if (typeof propDef !== 'object') {
+				propDef = {value: propDef};
+			} else if (typeof propDef === 'object' && propDef.constructor.name !== 'Object') {
+				propDef = {value: propDef};
+			}else if (typeof propDef === 'object' && propDef.value === undefined) {
 				propDef = {value: propDef};
 			}
 			defineProperty(this, prop, propDef);
@@ -762,7 +770,7 @@ const defineProperty = function(scope, prop, def) {
 	if (!scope.hasOwnProperty(prop)) { // TODO: test
 		Object.defineProperty(scope, prop, {
 			get: function() {
-				return scope._properties[prop];
+				return scope._properties[prop];// !== undefined ? scope._properties[prop] : initValue;
 			},
 			set: function(value) {
 				if (scope._properties[prop] === value) return;
@@ -771,7 +779,7 @@ const defineProperty = function(scope, prop, def) {
 				if (isPublic) {
 					if (def.observer) scope[def.observer](value, oldValue);
 					if (typeof scope[observer] === 'function') scope[observer](value, oldValue);
-					scope.changed.call(scope);
+					if (typeof scope.changed === 'function') scope.changed.call(scope);
 					scope.dispatchEvent(changeEvent, {value: value, oldValue: oldValue, bubbles: true});
 				}
 			},
@@ -783,6 +791,166 @@ const defineProperty = function(scope, prop, def) {
 };
 
 class IoLite extends IoLiteMixin(Object) {}
+
+const _clickmask = document.createElement('div');
+_clickmask.style = "position: fixed; top:0; left:0; bottom:0; right:0; z-index:2147483647;";
+
+let _mousedownPath = null;
+
+class Vector2 {
+  constructor(vector = {}) {
+    this.x = vector.x || 0;
+    this.y = vector.y || 0;
+  }
+  set(vector) {
+    this.x = vector.x;
+    this.y = vector.y;
+    return this;
+  }
+  sub(vector) {
+    this.x -= vector.x;
+    this.y -= vector.y;
+    return this;
+  }
+  length() {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+  distanceTo(vector) {
+    let dx = this.x - vector.x, dy = this.y - vector.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+}
+
+class Pointer {
+  constructor(pointer = {}) {
+    this.position = new Vector2(pointer.position);
+    this.previous = new Vector2(pointer.previous);
+    this.movement = new Vector2(pointer.movement);
+    this.distance = new Vector2(pointer.distance);
+    this.start = new Vector2(pointer.start);
+  }
+  getClosest(array) {
+    let closest = array[0];
+    for (let i = 1; i < array.length; i++) {
+      if (this.position.distanceTo(array[i].position) < this.position.distanceTo(closest.position)) {
+        closest = array[i];
+      }
+    }
+    return closest;
+  }
+  changed(pointer) {
+    this.previous.set(this.position);
+    this.movement.set(pointer.position).sub(this.position);
+    this.distance.set(pointer.position).sub(this.start);
+    this.position.set(pointer.position);
+  }
+}
+
+const IoInteractiveMixin = (superclass) => class extends superclass {
+  static get properties() {
+    return {
+      pointers: Array, // TODO: remove from properties
+      pointermode: 'relative',
+      cursor: 'all-scroll'
+    };
+  }
+  static get listeners() {
+    return {
+      'mousedown': '_onMousedown',
+      'touchstart': '_onTouchstart',
+      'mousemove': '_onMousehover'
+    };
+  }
+  constructor(params) {
+    super(params);
+    this._clickmask = _clickmask;
+  }
+  getPointers(event, reset) {
+    let touches = event.touches ? event.touches : [event];
+    let foundPointers = [];
+    let rect = this.getBoundingClientRect();
+    for (let i = 0; i < touches.length; i++) {
+      if (touches[i].target === event.target || event.touches === undefined) {
+        let position = new Vector2({
+          x: touches[i].clientX,
+          y: touches[i].clientY
+        });
+        if (this.pointermode === 'relative') {
+          position.x -= rect.left;
+          position.y -= rect.top;
+        } else if (this.pointermode === 'viewport') {
+          position.x = (position.x - rect.left) / rect.width * 2.0 - 1.0;
+          position.y = (position.y - rect.top) / rect.height * 2.0 - 1.0;
+        }
+        if (this.pointers[i] === undefined) this.pointers[i] = new Pointer({start: position});
+        let newPointer = new Pointer({position: position});
+        let pointer = newPointer.getClosest(this.pointers);
+        if (reset) pointer.start.set(position);
+        pointer.changed(newPointer);
+        foundPointers.push(pointer);
+      }
+    }
+    for (let i = this.pointers.length; i--;) {
+      if(foundPointers.indexOf(this.pointers[i]) === -1) {
+        this.pointers.splice(i, 1);
+      }
+    }
+  }
+  _onMousedown(event) {
+    // TODO: unhack
+    _mousedownPath = event.composedPath();
+    this.getPointers(event, true);
+    this._fire('io-pointer-start', event, this.pointers);
+    window.addEventListener('mousemove', this._onMousemove);
+    window.addEventListener('mouseup', this._onMouseup);
+    window.addEventListener('blur', this._onMouseup); //TODO: check pointer data
+    // TODO: clickmask breaks scrolling
+    if (_clickmask.parentNode !== document.body) {
+      document.body.appendChild(_clickmask);
+      _clickmask.style.setProperty('cursor', this.cursor);
+    }
+  }
+  _onMousemove(event) {
+    this.getPointers(event);
+    this._fire('io-pointer-move', event, this.pointers, _mousedownPath);
+  }
+  _onMouseup(event) {
+    this.getPointers(event);
+    this._fire('io-pointer-end', event, this.pointers, _mousedownPath);
+    window.removeEventListener('mousemove', this._onMousemove);
+    window.removeEventListener('mouseup', this._onMouseup);
+    window.removeEventListener('blur', this._onMouseup);
+    if (_clickmask.parentNode === document.body) {
+      document.body.removeChild(_clickmask);
+      _clickmask.style.setProperty('cursor', null);
+    }
+  }
+  _onMousehover(event) {
+    this.getPointers(event);
+    this._fire('io-pointer-hover', event, this.pointers);
+  }
+  _onTouchstart(event) {
+    this.getPointers(event, true);
+    this._fire('io-pointer-hover', event, this.pointers);
+    this._fire('io-pointer-start', event, this.pointers);
+    this.addEventListener('touchmove', this._onTouchmove);
+    this.addEventListener('touchend', this._onTouchend);
+  }
+  _onTouchmove(event) {
+    this.getPointers(event);
+    this._fire('io-pointer-move', event, this.pointers);
+  }
+  _onTouchend(event) {
+    this.removeEventListener('touchmove', this._onTouchmove);
+    this.removeEventListener('touchend', this._onTouchend);
+    this._fire('io-pointer-end', event, this.pointers);
+
+  }
+  _fire(eventName, event, pointer, path) {
+    path = path || event.composedPath();
+    this.dispatchEvent(eventName, {event: event, pointer: pointer, path: path}, false);
+  }
+};
 
 class IoNode extends IoCoreMixin(Object) {
   connect() {
@@ -994,6 +1162,111 @@ class IoNumber extends IoElement {
 
 IoNumber.Register();
 
+function extendTypes(types, typesExtend) {
+  for (let type in typesExtend) {
+    types[type] = types[type] || [];
+    types[type] = [typesExtend[type][0], Object.assign(types[type][1] || {}, typesExtend[type][1] || {})];
+  }
+  return types;
+}
+
+function extendGroups(groups, groupsExtend) {
+  for (let group in groupsExtend) {
+    groups[group] = groups[group] || [];
+    for (let i = 0; i < groupsExtend[group].length; i++) {
+      if (groups[group].indexOf(groupsExtend[group][i]) === -1) {
+        groups[group].push(groupsExtend[group][i]);
+      }
+    }
+  }
+  return groups;
+}
+
+class ProtoConfig {
+  constructor(prototypes) {
+    this.types = {};
+    this.groups = {};
+    for (let i = 0; i < prototypes.length; i++) {
+      const config = prototypes[i].constructor.config || {};
+      const types = config.types || {};
+      for (let cstr in types) {
+        this.types[cstr] = extendTypes(this.types[cstr] || {}, types[cstr]);
+      }
+      const groups = config.groups || {};
+      for (let cstr in groups) {
+        this.groups[cstr] = extendGroups(this.groups[cstr] || {}, groups[cstr]);
+      }
+    }
+  }
+  getConfig(object) {
+    const keys = Object.keys(object);
+    let types = {};
+    let groups = {};
+
+    let proto = object.__proto__;
+    while (proto) {
+      keys.push(...Object.keys(proto));
+      types = extendTypes(types, this.types[proto.constructor.name]);
+      groups = extendGroups(groups, this.groups[proto.constructor.name]);
+      proto = proto.__proto__;
+    }
+
+    let configs = {
+      types: {},
+      groups: {
+        'properties': [],
+      }
+    };
+
+    let assigned = []; // TODO: rename
+
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i];
+      const value = object[k];
+      const type = typeof value;
+      const cstr = (value && value.constructor) ? value.constructor.name : 'null';
+
+      const typeStr = 'type:' + type;
+      const cstrStr = 'constructor:' + cstr;
+      const keyStr = k;
+      const valueStr = 'value:' + String(value); // TODO: consider optimizing against large strings.
+
+      if (type == 'function') continue;
+
+      configs.types[k] = {};
+
+      if (types[typeStr]) configs.types[k] = types[typeStr];
+      if (types[cstrStr]) configs.types[k] = types[cstrStr];
+      if (types[keyStr]) configs.types[k] = types[keyStr];
+      if (types[valueStr]) configs.types[k] = types[valueStr];
+
+      for (let g in groups) {
+        let group = groups[g];
+        configs.groups[g] = configs.groups[g] || [];
+        if (group.indexOf(typeStr) !== -1) { configs.groups[g].push(k); assigned.push(k); }
+        if (group.indexOf(cstrStr) !== -1) { configs.groups[g].push(k); assigned.push(k); }
+        if (group.indexOf(keyStr) !== -1) { configs.groups[g].push(k); assigned.push(k); }
+        if (group.indexOf(valueStr) !== -1) { configs.groups[g].push(k); assigned.push(k); }
+      }
+    }
+
+    if (assigned.length === 0) {
+      configs.groups['properties'] = keys;
+    } else {
+      for (let i = 0; i < keys.length; i++) {
+        if (assigned.indexOf(keys[i]) === -1) configs.groups['properties'].push(keys[i]);
+      }
+    }
+
+    for (let group in configs.groups) { if (configs.groups[group].length === 0) delete configs.groups[group]; }
+    delete configs.groups.hidden;
+
+    return configs;
+  }
+}
+
+const __configMap = new WeakMap();
+
 class IoObject extends IoElement {
   static get style() {
     return html`<style>
@@ -1003,24 +1276,27 @@ class IoObject extends IoElement {
         flex: 0 0;
         line-height: 1em;
       }
-      :host > div {
-        display: flex;
+      :host > div.io-object-group {
+        font-weight: bold;
+      }
+      :host > div.io-object-prop {
+        display: flex !important;
         flex-direction: row;
       }
       :host > div > span {
         padding: 0 0.2em 0 0.5em;
         flex: 0 0 auto;
       }
-      :host > io-number {
+      :host > div > io-number {
         color: rgb(28, 0, 207);
       }
-      :host > io-string {
+      :host > div > io-string {
         color: rgb(196, 26, 22);
       }
-      :host > io-boolean {
+      :host > div > io-boolean {
         color: rgb(170, 13, 145);
       }
-      :host > io-option {
+      :host > div > io-option {
         color: rgb(32,135,0);
       }
     </style>`;
@@ -1028,14 +1304,16 @@ class IoObject extends IoElement {
   static get properties() {
     return {
       value: Object,
-      props: Array,
-      configs: Object,
+      config: Object,
       expanded: {
         type: Boolean,
         reflect: true
       },
       label: String
     };
+  }
+  constructor(props) {
+    super(props);
   }
   connectedCallback() {
     super.connectedCallback();
@@ -1072,82 +1350,137 @@ class IoObject extends IoElement {
       this.dispatchEvent('value-set', detail, false); // TODO
     }
   }
-  getPropConfigs(keys) {
-    let configs = {};
-
-    let proto = this.value.__proto__;
-    while (proto) {
-      let c = IoObjectConfig[proto.constructor.name];
-      if (c) configs = Object.assign(configs, c);
-      c = this.configs[proto.constructor.name];
-      if (c) configs = Object.assign(configs, c);
-      proto = proto.__proto__;
+  valueChanged() {
+    if (__configMap.has(this.value)) {
+      this.config = __configMap.get(this.value);
+    } else {
+      this.config = this.__proto__.__config.getConfig(this.value);
+      __configMap.set(this.value, this.config);
     }
-
-    let propConfigs = {};
-
-    for (let i = 0; i < keys.length; i++) {
-      let key = keys[i];
-      let value = this.value[key];
-      let type = typeof value;
-      let cstr = (value && value.constructor) ? value.constructor.name : 'null';
-
-      if (type == 'function') continue;
-
-      propConfigs[key] = {};
-
-      if (configs.hasOwnProperty('type:' + type)) {
-        propConfigs[key] = configs['type:' + type];
-      }
-      if (configs.hasOwnProperty('constructor:'+cstr)) {
-        propConfigs[key] = configs['constructor:'+cstr];
-      }
-      if (configs.hasOwnProperty('key:' + key)) {
-        propConfigs[key] = configs['key:' + key];
-      }
-      if (configs.hasOwnProperty('value:' + String(value))) {
-        propConfigs[key] = configs['value:' + String(value)];
-      }
-    }
-    return propConfigs;
   }
   changed() {
-    let label = this.label || this.value.constructor.name;
-    let elements = [['io-boolean', {true: '▾' + label, false: '▸' + label, value: this.bind('expanded')}]];
+    const types = this.config.types;
+    const groups = this.config.groups;
+    const label = this.label || this.value.constructor.name;
+    const elements = [['io-boolean', {true: '▾' + label, false: '▸' + label, value: this.bind('expanded')}]];
     if (this.expanded) {
-      let keys = [...Object.keys(this.value), ...Object.keys(this.value.__proto__)];
-      let proplist = this.props.length ? this.props : keys;
-      let configs = this.getPropConfigs(proplist);
-      for (let key in configs) {
-        // TODO: remove props keyword
-        if (configs[key]) {
-          let config = Object.assign({
-            tag: configs[key].tag,
-            value: this.value[key],
-            id: key,
-            'on-value-set': this._onValueSet
-          }, configs[key].props);
-          if (this.value.__props && this.value.__props[key] && this.value.__props[key].config) {
-            // TODO: test
-            config = Object.assign(config, this.value.__props[key].config);
+      for (let g in groups) {
+        if (Object.keys(groups).length > 1) elements.push(['div', {className: 'io-object-group'}, g]);
+        for (let p in groups[g]) {
+          const k = groups[g][p];
+          if (types[k]) {
+            const tag = types[k][0];
+            const protoConfig = types[k][1];
+            const itemConfig = {id: k, value: this.value[k], 'on-value-set': this._onValueSet};
+            elements.push(['div', {className: 'io-object-prop'}, [['span', types.label || k + ':'], [tag, Object.assign(itemConfig, protoConfig)]]]);
           }
-          elements.push(['div', [['span', config.label || key + ':'], [config.tag, config]]]);
         }
+
       }
     }
     this.template(elements);
   }
+  static get config() {
+    return {
+      types: {
+        'Object': {
+          'type:string': ['io-string', {}],
+          'type:number': ['io-number', {step: 0.01}],
+          'type:boolean': ['io-boolean', {}],
+          'type:object': ['io-object', {}],
+          'value:null': ['io-string', {}],
+          'value:undefined': ['io-string', {}],
+        },
+      },
+      groups: {
+        'Object': {
+          // 'properties': ['key:time'],
+          // 'meshes': ['constructor:Mesh'],
+          // 'truestrings': ['value:true', 'value:false'],
+          // 'hidden': ['type:function'],
+        },
+        'Node': {
+          'properties': [
+            'nodeValue', 'nodeType', 'nodeName', 'baseURI',
+          ],
+          'hierarchy': [
+            'isConnected', 'ownerDocument', 'parentNode', 'parentElement', 'childNodes',
+            'firstChild', 'lastChild', 'previousSibling', 'nextSibling',
+          ],
+          'hidden': [
+            'ELEMENT_NODE', 'ATTRIBUTE_NODE', 'TEXT_NODE', 'CDATA_SECTION_NODE',
+            'ENTITY_REFERENCE_NODE', 'ENTITY_NODE', 'PROCESSING_INSTRUCTION_NODE',
+            'COMMENT_NODE', 'DOCUMENT_NODE', 'DOCUMENT_TYPE_NODE', 'DOCUMENT_FRAGMENT_NODE',
+            'NOTATION_NODE', 'DOCUMENT_POSITION_DISCONNECTED', 'DOCUMENT_POSITION_PRECEDING',
+            'DOCUMENT_POSITION_FOLLOWING', 'DOCUMENT_POSITION_CONTAINS', 'DOCUMENT_POSITION_CONTAINED_BY',
+            'DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC',
+            'normalize', 'cloneNode', 'isEqualNode', 'isSameNode', 'compareDocumentPosition', 'contains',
+            'lookupPrefix', 'lookupNamespaceURI', 'isDefaultNamespace', 'insertBefore', 'appendChild',
+            'replaceChild', 'removeChild', 'hasChildNodes', 'getRootNode', 'textContent',
+          ],
+        },
+        'Element': {
+          'properties': [
+            'id', 'className',
+            'classList', 'attributes', 'localName', 'tagName', 'namespaceURI', 'prefix',
+          ],
+          'hierarchy': [
+            'shadowRoot', 'previousElementSibling', 'nextElementSibling', 'children',
+            'firstElementChild', 'lastElementChild', 'childElementCount', 'slot', 'assignedSlot',
+          ],
+          'style': [
+            'attributeStyleMap',
+          ],
+          'hidden': [
+            'innerHTML', 'outerHTML',
+            'onbeforecopy', 'onbeforecut', 'onbeforepaste',
+            'oncopy', 'oncut', 'onpaste', 'onsearch', 'onselectstart',
+            'onwebkitfullscreenchange', 'onwebkitfullscreenerror',
+          ],
+          'layout': [
+            'scrollTop', 'scrollLeft', 'scrollWidth', 'scrollHeight', 'clientTop', 'clientLeft', 'clientWidth', 'clientHeight',
+          ],
+        },
+        'HTMLElement': {
+          'properties': [
+            'title', 'hidden', 'tabIndex', 'draggable', 'contentEditable', 'isContentEditable',
+          ],
+          'style': [
+            'style',
+          ],
+          'layout': [
+            'offsetParent', 'offsetTop', 'offsetLeft', 'offsetWidth', 'offsetHeight',
+          ],
+          'hidden': [
+            'dataset', 'accessKey', 'nonce',
+            'innerText', 'outerText',
+            'onabort', 'onblur', 'oncancel', 'oncanplay',
+            'oncanplaythrough', 'onchange', 'onclick', 'onclose', 'oncontextmenu', 'oncuechange', 'ondblclick', 'ondrag',
+            'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'ondurationchange', 'onemptied',
+            'onended', 'onerror', 'onfocus', 'oninput', 'oninvalid', 'onkeydown', 'onkeypress', 'onkeyup', 'onload',
+            'onloadeddata', 'onloadedmetadata', 'onloadstart', 'onmousedown', 'onmouseenter', 'onmouseleave', 'onmousemove',
+            'onmouseout', 'onmouseover', 'onmouseup', 'onmousewheel', 'onpause', 'onplay', 'onplaying', 'onprogress',
+            'onratechange', 'onreset', 'onresize', 'onscroll', 'onseeked', 'onseeking', 'onselect', 'onstalled', 'onsubmit',
+            'onsuspend', 'ontimeupdate', 'ontoggle', 'onvolumechange', 'onwaiting', 'onwheel', 'onauxclick',
+            'ongotpointercapture', 'onlostpointercapture', 'onpointerdown', 'onpointermove', 'onpointerup', 'onpointercancel',
+            'onpointerover', 'onpointerout', 'onpointerenter', 'onpointerleave',
+          ],
+          'language': [
+            'inputMode', 'dir', 'lang', 'translate', 'spellcheck', 'autocapitalize',
+          ],
+        },
+      }
+    };
+  }
+  static get groups() {
+    return {
+    };
+  }
 }
 
-const IoObjectConfig = {
-  'Object' : {
-    'type:string': {tag: 'io-string', props: {}},
-    'type:number': {tag: 'io-number', props: {step: 0.01}},
-    'type:boolean': {tag: 'io-boolean', props: {}},
-    'type:object': {tag: 'io-object', props: {}},
-    'value:null': {tag: 'io-string', props: {}},
-    'value:undefined': {tag: 'io-string', props: {}}
-  }
+IoObject.Register = function() {
+  IoElement.Register.call(this);
+  Object.defineProperty(this.prototype, '__config', {value: new ProtoConfig(this.prototype.__prototypes)});
 };
 
 IoObject.Register();
@@ -1211,4 +1544,7 @@ class IoString extends IoElement {
 
 IoString.Register();
 
-export { IoCoreMixin, IoElement, html, IoLite, IoLiteMixin, IoNode, IoButton, IoBoolean, IoNumber, IoObject, IoString };
+class IoInteractive extends IoInteractiveMixin(IoElement) {}
+IoInteractive.Register();
+
+export { IoInteractive, IoCoreMixin, IoElement, html, IoLite, IoLiteMixin, IoInteractiveMixin, IoNode, IoButton, IoBoolean, IoNumber, IoObject, IoString };
