@@ -1,4 +1,4 @@
-  <p style="margin-top:2em"><a href="https://io-gui.dev" target="_blank" rel="noopener noreferrer"><img width="256" src="https://io-gui.dev/io/images/logo/io-logo.svg" alt="IoGui Logo"></a></p>
+  <p style="margin-top:2em"><a href="https://io-gui.dev" target="_blank" rel="noopener noreferrer"><img width="256" src="https://iogui.dev/io/images/logo/io-logo.svg" alt="IoGui Logo"></a></p>
 
 ## Introduction
 
@@ -14,7 +14,6 @@ For quick start, read about the [basic usage](https://io-gui.dev/#path=docs/intr
 
 <p align="center">
   <a href="https://www.npmjs.com/package/io-gui"><img src="https://img.shields.io/npm/v/io-gui.svg" alt="NPM package" /></a>
-  <a href="https://bundlephobia.com/result?p=io-gui"><img src="https://badgen.net/bundlephobia/minzip/io-gui" alt="Build Size" /></a>
   <a href="https://travis-ci.org/io-gui/io"><img src="https://travis-ci.org/io-gui/io.svg?branch=dev" alt="Build Status" /></a>
   <a href="https://david-dm.org/io-gui/io"><img src="https://img.shields.io/david/io-gui/io.svg" alt="Dependencies" /></a>
   <a href="https://david-dm.org/io-gui/io?type=dev"><img src="https://img.shields.io/david/dev/io-gui/io.svg" alt="Dev Dependencies" /></a>
