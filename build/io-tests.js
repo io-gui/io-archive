@@ -31,9 +31,9 @@ var mocha = new Mocha({reporter: 'html'});
 
 var Date = global.Date;
 var setTimeout = global.setTimeout;
-var setInterval = global.setInterval;
-var clearTimeout = global.clearTimeout;
-var clearInterval = global.clearInterval;
+global.setInterval;
+global.clearTimeout;
+global.clearInterval;
 
 var uncaughtExceptionHandlers = [];
 
@@ -1595,8 +1595,8 @@ Mocha.prototype.reporter = function(reporter, reporterOptions) {
           } catch (_err) {
             _err.code !== 'MODULE_NOT_FOUND' ||
             _err.message.indexOf('Cannot find module') !== -1
-              ? void 0
-              : void 0;
+              ? (void 0)
+              : (void 0);
           }
         }
       }
@@ -1907,7 +1907,7 @@ Mocha.prototype.fullTrace = function(fullTrace) {
 Mocha.prototype.growl = function() {
   this.options.growl = this.isGrowlCapable();
   if (!this.options.growl) {
-    var detail = process.browser
+    process.browser
       ? 'notification support not available in this browser...'
       : 'notification support prerequisites not installed...';
   }
@@ -2886,7 +2886,7 @@ var EVENT_SUITE_END = constants.EVENT_SUITE_END;
  * Expose `Doc`.
  */
 
-exports = module.exports = Doc;
+module.exports = Doc;
 
 /**
  * Constructs a new `Doc` reporter instance.
@@ -2978,7 +2978,7 @@ var EVENT_RUN_END = constants.EVENT_RUN_END;
  * Expose `Dot`.
  */
 
-exports = module.exports = Dot;
+module.exports = Dot;
 
 /**
  * Constructs a new `Dot` reporter instance.
@@ -3073,7 +3073,7 @@ var Date = global.Date;
  * Expose `HTML`.
  */
 
-exports = module.exports = HTML;
+module.exports = HTML;
 
 /**
  * Stats template.
@@ -3473,7 +3473,7 @@ var EVENT_RUN_END = constants.EVENT_RUN_END;
  * Expose `JSONStream`.
  */
 
-exports = module.exports = JSONStream;
+module.exports = JSONStream;
 
 /**
  * Constructs a new `JSONStream` reporter instance.
@@ -3567,7 +3567,7 @@ var EVENT_TEST_PENDING = constants.EVENT_TEST_PENDING;
  * Expose `JSON`.
  */
 
-exports = module.exports = JSONReporter;
+module.exports = JSONReporter;
 
 /**
  * Constructs a new `JSON` reporter instance.
@@ -3708,7 +3708,7 @@ var color = Base.color;
  * Expose `Landing`.
  */
 
-exports = module.exports = Landing;
+module.exports = Landing;
 
 /**
  * Airplane color.
@@ -3820,7 +3820,7 @@ var cursor = Base.cursor;
  * Expose `List`.
  */
 
-exports = module.exports = List;
+module.exports = List;
 
 /**
  * Constructs a new `List` reporter instance.
@@ -3903,7 +3903,7 @@ var SUITE_PREFIX = '$';
  * Expose `Markdown`.
  */
 
-exports = module.exports = Markdown;
+module.exports = Markdown;
 
 /**
  * Constructs a new `Markdown` reporter instance.
@@ -4010,7 +4010,7 @@ var EVENT_RUN_BEGIN = constants.EVENT_RUN_BEGIN;
  * Expose `Min`.
  */
 
-exports = module.exports = Min;
+module.exports = Min;
 
 /**
  * Constructs a new `Min` reporter instance.
@@ -4068,7 +4068,7 @@ var EVENT_TEST_FAIL = constants.EVENT_TEST_FAIL;
  * Expose `Dot`.
  */
 
-exports = module.exports = NyanCat;
+module.exports = NyanCat;
 
 /**
  * Constructs a new `Nyan` reporter instance.
@@ -4347,7 +4347,7 @@ var cursor = Base.cursor;
  * Expose `Progress`.
  */
 
-exports = module.exports = Progress;
+module.exports = Progress;
 
 /**
  * General progress bar color.
@@ -4456,7 +4456,7 @@ var color = Base.color;
  * Expose `Spec`.
  */
 
-exports = module.exports = Spec;
+module.exports = Spec;
 
 /**
  * Constructs a new `Spec` reporter instance.
@@ -4557,7 +4557,7 @@ var sprintf = util.format;
  * Expose `TAP`.
  */
 
-exports = module.exports = TAP;
+module.exports = TAP;
 
 /**
  * Constructs a new `TAP` reporter instance.
@@ -4863,7 +4863,7 @@ var Date = global.Date;
  * Expose `XUnit`.
  */
 
-exports = module.exports = XUnit;
+module.exports = XUnit;
 
 /**
  * Constructs a new `XUnit` reporter instance.
@@ -6701,7 +6701,7 @@ var createInvalidArgumentTypeError = errors.createInvalidArgumentTypeError;
  * Expose `Suite`.
  */
 
-exports = module.exports = Suite;
+module.exports = Suite;
 
 /**
  * Create a new `Suite` with the given `title` and parent `Suite`.
@@ -8421,7 +8421,7 @@ function BrowserStdout(opts) {
 }
 
 BrowserStdout.prototype._write = function(chunks, encoding, cb) {
-  var output = chunks.toString ? chunks.toString() : chunks;
+  chunks.toString ? chunks.toString() : chunks;
   if (this.label === false) ;
   process.nextTick(cb);
 };
@@ -14666,7 +14666,7 @@ var Duplex;
 Readable.ReadableState = ReadableState;
 
 /*<replacement>*/
-var EE = require('events').EventEmitter;
+require('events').EventEmitter;
 
 var EElistenerCount = function (emitter, type) {
   return emitter.listeners(type).length;
@@ -17209,7 +17209,7 @@ function deprecate (fn, msg) {
     if (!warned) {
       if (config('throwDeprecation')) {
         throw new Error(msg);
-      } else if (config('traceDeprecation')) ;
+      } else if (config('traceDeprecation')) ; else ;
       warned = true;
     }
     return fn.apply(this, arguments);
@@ -17329,7 +17329,7 @@ exports.deprecate = function(fn, msg) {
     if (!warned) {
       if (process.throwDeprecation) {
         throw new Error(msg);
-      } else if (process.traceDeprecation) ;
+      } else if (process.traceDeprecation) ; else ;
       warned = true;
     }
     return fn.apply(this, arguments);
@@ -17347,9 +17347,9 @@ exports.debuglog = function(set) {
   set = set.toUpperCase();
   if (!debugs[set]) {
     if (new RegExp('\\b' + set + '\\b', 'i').test(debugEnviron)) {
-      var pid = process.pid;
+      process.pid;
       debugs[set] = function() {
-        var msg = exports.format.apply(exports, arguments);
+        exports.format.apply(exports, arguments);
       };
     } else {
       debugs[set] = function() {};
@@ -28282,7 +28282,6 @@ module.exports={
   },{}],38:[function(require,module,exports){
   (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-    
     (global.typeDetect = factory());
   }(this, (function () { 
   
@@ -29027,7 +29026,7 @@ class Node {
   }
 }
 
-class TestNode extends Node$1 {
+class TestNode$2 extends Node$1 {
   static get Properties() {
     return {
       prop0: String,
@@ -29035,7 +29034,7 @@ class TestNode extends Node$1 {
     };
   }
 }
-TestNode.Register();
+TestNode$2.Register();
 
 class TestElement extends IoElement {
   static get Properties() {
@@ -29073,7 +29072,7 @@ class TestElement extends IoElement {
   constructor(initProps) {
     super(initProps);
     this.template([['test-subelement', {id: 'subelement', prop0: this.bind('prop0')}]]);
-    this.subnode = new TestNode({prop2: this.bind('prop0')});
+    this.subnode = new TestNode$2({prop2: this.bind('prop0')});
     this.subnode.connect(window);
   }
   // TODO: test arguments
@@ -29233,7 +29232,7 @@ class TestNode$1 extends Node$1 {
 }
 TestNode$1.Register();
 
-const string = (object) => {
+const string$3 = (object) => {
   return JSON.stringify(object);
 };
 
@@ -29277,25 +29276,25 @@ class Binding {
           chai.expect(binding1.targets[1]).to.be.equal(dstNode2);
           chai.expect(binding1.targets[2]).to.be.equal(dstNode3);
 
-          chai.expect(string(binding1.targetProps.get(dstNode1))).to.be.equal(string(['prop1']));
-          chai.expect(string(binding1.targetProps.get(dstNode2))).to.be.equal(string(['prop1']));
-          chai.expect(string(binding1.targetProps.get(dstNode3))).to.be.equal(string(['prop1', 'prop2']));
+          chai.expect(string$3(binding1.targetProps.get(dstNode1))).to.be.equal(string$3(['prop1']));
+          chai.expect(string$3(binding1.targetProps.get(dstNode2))).to.be.equal(string$3(['prop1']));
+          chai.expect(string$3(binding1.targetProps.get(dstNode3))).to.be.equal(string$3(['prop1', 'prop2']));
 
           dstNode1.dispose();
           dstNode2.disconnect();
           dstNode3.unbind('prop1');
 
-          chai.expect(string(binding1.targetProps.get(dstNode1))).to.be.equal(string([]));
-          chai.expect(string(binding1.targetProps.get(dstNode2))).to.be.equal(string([]));
-          chai.expect(string(binding1.targetProps.get(dstNode3))).to.be.equal(string(['prop2']));
+          chai.expect(string$3(binding1.targetProps.get(dstNode1))).to.be.equal(string$3([]));
+          chai.expect(string$3(binding1.targetProps.get(dstNode2))).to.be.equal(string$3([]));
+          chai.expect(string$3(binding1.targetProps.get(dstNode3))).to.be.equal(string$3(['prop2']));
 
           dstNode2.prop2 = binding1;
           dstNode2.connect();
 
           dstNode3.prop1 = binding1;
 
-          chai.expect(string(binding1.targetProps.get(dstNode2))).to.be.equal(string(['prop2', 'prop1']));
-          chai.expect(string(binding1.targetProps.get(dstNode3))).to.be.equal(string(['prop2', 'prop1']));
+          chai.expect(string$3(binding1.targetProps.get(dstNode2))).to.be.equal(string$3(['prop2', 'prop1']));
+          chai.expect(string$3(binding1.targetProps.get(dstNode3))).to.be.equal(string$3(['prop2', 'prop1']));
         });
       });
       describe('Bindings', () => {
@@ -29323,33 +29322,33 @@ class Binding {
   }
 }
 
-const string$1 = (object) => {
+const string$2 = (object) => {
   return JSON.stringify(object);
 };
 
-class Node1 extends Node$1 {
+class Node1$1 extends Node$1 {
   function1() {}
   onFunction1() {}
   _function1() {}
 }
-Node1.Register();
+Node1$1.Register();
 
-class Node2 extends Node1 {
+class Node2$1 extends Node1$1 {
   function2() {}
   onFunction2() {}
   _function2() {}
 }
-Node2.Register();
+Node2$1.Register();
 
 class Functions {
   run() {
     describe('Functions', () => {
       it('Should include all functions starting with "on" or "_"', () => {
-        const node = new Node2();
-        chai.expect(string$1(node.__protoFunctions)).to.be.equal(string$1(['onFunction1', '_function1', 'onFunction2', '_function2']));
+        const node = new Node2$1();
+        chai.expect(string$2(node.__protoFunctions)).to.be.equal(string$2(['onFunction1', '_function1', 'onFunction2', '_function2']));
       });
       it('Should bind all "on" and "_" functions to `this` with `.bind()`', () => {
-        const node = new Node2();
+        const node = new Node2$1();
         chai.expect(node.function1.name).to.be.equal('function1');
         chai.expect(node.onFunction1.name).to.be.equal('bound onFunction1');
         chai.expect(node._function1.name).to.be.equal('bound _function1');
@@ -29361,11 +29360,11 @@ class Functions {
   }
 }
 
-const string$2 = (object) => {
+const string$1 = (object) => {
   return JSON.stringify(object);
 };
 
-class Node1$1 extends Node$1 {
+class Node1 extends Node$1 {
   static get Listeners() {
     return {
       'event1': 'handler1',
@@ -29373,9 +29372,9 @@ class Node1$1 extends Node$1 {
   }
   handler1() {}
 }
-Node1$1.Register();
+Node1.Register();
 
-class Node2$1 extends Node1$1 {
+class Node2 extends Node1 {
   static get Listeners() {
     return {
       'event2': 'handler2',
@@ -29384,25 +29383,25 @@ class Node2$1 extends Node1$1 {
   handler2() {}
   handler3() {}
 }
-Node2$1.Register();
+Node2.Register();
 
 class Listeners {
   run() {
     describe('Listeners', () => {
       describe('ProtoListeners', () => {
         it('Should include all listeners from protochain', () => {
-          const node = new Node2$1();
-          chai.expect(string$2(node.__protoListeners)).to.be.equal(string$2({'event1': 'handler1', 'event2': 'handler2'}));
+          const node = new Node2();
+          chai.expect(string$1(node.__protoListeners)).to.be.equal(string$1({'event1': 'handler1', 'event2': 'handler2'}));
         });
       });
       describe('Listeners', () => {
         it('Should include all listeners from protochain', () => {
-          const node = new Node2$1();
-          chai.expect(string$2(node.__listeners)).to.be.equal(string$2({'event1': 'handler1', 'event2': 'handler2'}));
+          const node = new Node2();
+          chai.expect(string$1(node.__listeners)).to.be.equal(string$1({'event1': 'handler1', 'event2': 'handler2'}));
         });
         it('Should include all prop listeners in active listeners', () => {
           const handler4 = function() {};
-          const node = new Node2$1({'on-event3': 'handler3', 'on-event4': handler4});
+          const node = new Node2({'on-event3': 'handler3', 'on-event4': handler4});
           node.connect();
           chai.expect(node.__listeners.activeListeners.event1[0]).to.be.equal(node.handler1);
           chai.expect(node.__listeners.activeListeners.event2[0]).to.be.equal(node.handler2);
@@ -29417,24 +29416,24 @@ class Listeners {
   }
 }
 
-const string$3 = (object) => {
+const string = (object) => {
   return JSON.stringify(object);
 };
 
-class Object1 {
+class Object1$1 {
   constructor() {
     this.prop = true;
   }
 }
 
-class TestNode$2 extends Node$1 {
+class TestNode extends Node$1 {
   static get Properties() {
     return {
       label: ''
     };
   }
 }
-TestNode$2.Register();
+TestNode.Register();
 class Properties {
   run() {
     describe('Properties', () => {
@@ -29542,11 +29541,11 @@ class Properties {
           chai.expect(protoProp.enumerable).to.be.equal(prop.enumerable).to.be.equal(true);
 
           // initialize with custom Object1 argument
-          protoProp = new ProtoProperty(Object1);
+          protoProp = new ProtoProperty(Object1$1);
           prop = new Property(protoProp);
           chai.expect(protoProp.value).to.be.equal(undefined);
-          chai.expect(prop.value).to.be.deep.equal(new Object1());
-          chai.expect(protoProp.type).to.be.equal(prop.type).to.be.equal(Object1);
+          chai.expect(prop.value).to.be.deep.equal(new Object1$1());
+          chai.expect(protoProp.type).to.be.equal(prop.type).to.be.equal(Object1$1);
           chai.expect(protoProp.notify).to.be.equal(prop.notify).to.be.equal(true);
           chai.expect(protoProp.reflect).to.be.equal(prop.reflect).to.be.equal(0);
           chai.expect(protoProp.observe).to.be.equal(prop.observe).to.be.equal(false);
@@ -29615,12 +29614,12 @@ class Properties {
           chai.expect(protoProp.enumerable).to.be.equal(prop.enumerable).to.be.equal(true);
 
           // initialize with an object argument with custom object1 value property
-          let object1 = new Object1();
+          let object1 = new Object1$1();
           protoProp = new ProtoProperty({value: object1});
           prop = new Property(protoProp);
           chai.expect(protoProp.value).to.be.equal(object1);
           chai.expect(prop.value).to.be.equal(object1);
-          chai.expect(protoProp.type).to.be.equal(prop.type).to.be.equal(Object1);
+          chai.expect(protoProp.type).to.be.equal(prop.type).to.be.equal(Object1$1);
           chai.expect(protoProp.notify).to.be.equal(prop.notify).to.be.equal(true);
           chai.expect(protoProp.reflect).to.be.equal(prop.reflect).to.be.equal(0);
           chai.expect(protoProp.observe).to.be.equal(prop.observe).to.be.equal(false);
@@ -29628,11 +29627,11 @@ class Properties {
           chai.expect(protoProp.enumerable).to.be.equal(prop.enumerable).to.be.equal(true);
 
           // initialize with an object argument with custom Object1 type property
-          protoProp = new ProtoProperty({type: Object1});
+          protoProp = new ProtoProperty({type: Object1$1});
           prop = new Property(protoProp);
           chai.expect(protoProp.value).to.be.equal(undefined);
-          chai.expect(prop.value).to.be.deep.equal(new Object1());
-          chai.expect(protoProp.type).to.be.equal(prop.type).to.be.equal(Object1);
+          chai.expect(prop.value).to.be.deep.equal(new Object1$1());
+          chai.expect(protoProp.type).to.be.equal(prop.type).to.be.equal(Object1$1);
           chai.expect(protoProp.notify).to.be.equal(prop.notify).to.be.equal(true);
           chai.expect(protoProp.reflect).to.be.equal(prop.reflect).to.be.equal(0);
           chai.expect(protoProp.observe).to.be.equal(prop.observe).to.be.equal(false);
@@ -29641,7 +29640,7 @@ class Properties {
         });
         it('Should initialize binding properly', () => {
           let protoProp, prop;
-          let binding = new Binding$1(new TestNode$2({label: 'lorem'}), 'label');
+          let binding = new Binding$1(new TestNode({label: 'lorem'}), 'label');
 
           protoProp = new ProtoProperty(binding);
           prop = new Property(protoProp);
@@ -29650,7 +29649,7 @@ class Properties {
           chai.expect(protoProp.value).to.be.equal(undefined);
           chai.expect(prop.value).to.be.equal('lorem');
 
-          let node = new TestNode$2({label: 'lorem'});
+          let node = new TestNode({label: 'lorem'});
           binding = new Binding$1(node, 'label');
 
           protoProp = new ProtoProperty({binding: binding, value: 'ipsum'});
@@ -29703,8 +29702,8 @@ class Properties {
           const props1 = node1.__properties;
           const props2 = node2.__properties;
 
-          chai.expect(string$3(Object.keys(props1))).to.be.equal(string$3(['lazy', 'prop1']));
-          chai.expect(string$3(Object.keys(props2))).to.be.equal(string$3(['lazy', 'prop3']));
+          chai.expect(string(Object.keys(props1))).to.be.equal(string(['lazy', 'prop1']));
+          chai.expect(string(Object.keys(props2))).to.be.equal(string(['lazy', 'prop3']));
 
           chai.expect(props1.__node).to.be.equal(node1);
           chai.expect(props2.__node).to.be.equal(node2);
@@ -29768,9 +29767,9 @@ class Properties {
           chai.expect(props.prop1.enumerable).to.be.equal(false);
         });
         it('Should correctly initialize bound properties', () => {
-          const binding1 = new Binding$1(new TestNode$2({label: 'binding1'}), 'label');
-          const binding2 = new Binding$1(new TestNode$2({label: 'binding2'}), 'label');
-          const binding3 = new Binding$1(new TestNode$2({label: 'binding3'}), 'label');
+          const binding1 = new Binding$1(new TestNode({label: 'binding1'}), 'label');
+          const binding2 = new Binding$1(new TestNode({label: 'binding2'}), 'label');
+          const binding3 = new Binding$1(new TestNode({label: 'binding3'}), 'label');
 
           class Object1 extends Node$1 {
             static get Properties() {
@@ -29907,7 +29906,7 @@ class Properties {
           node.addEventListener('prop-changed', (event) => {
             const value = event.detail.value;
             const oldValue = event.detail.oldValue;
-            chai.expect(string$3(value)).to.be.equal(string$3({}));
+            chai.expect(string(value)).to.be.equal(string({}));
             chai.expect(oldValue).to.be.equal(undefined);
           });
 
@@ -29918,8 +29917,8 @@ class Properties {
           node.addEventListener('prop-changed', (event) => {
             const value = event.detail.value;
             const oldValue = event.detail.oldValue;
-            chai.expect(string$3(value)).to.be.equal(string$3({}));
-            chai.expect(string$3(oldValue)).to.be.equal(string$3({}));
+            chai.expect(string(value)).to.be.equal(string({}));
+            chai.expect(string(oldValue)).to.be.equal(string({}));
           });
 
           node.prop = {};
@@ -29940,8 +29939,8 @@ class Properties {
           node.addEventListener('prop-changed', (event) => {
             const value = event.detail.value;
             const oldValue = event.detail.oldValue;
-            chai.expect(string$3(value)).to.be.equal(string$3({}));
-            chai.expect(string$3(oldValue)).to.be.equal(string$3({}));
+            chai.expect(string(value)).to.be.equal(string({}));
+            chai.expect(string(oldValue)).to.be.equal(string({}));
           });
 
           node.connect();
@@ -30002,8 +30001,8 @@ class Array1 extends Array {}
 class Array2 extends Array1 {}
 class Array3 extends Array2 {}
 
-class Object1$1 {}
-class Object2 extends Object1$1 {}
+class Object1 {}
+class Object2 extends Object1 {}
 class Object3 extends Object2 {}
 
 class HTML1 extends HTMLElement {}
@@ -30036,7 +30035,7 @@ class ProtoChain {
 /**
  * Property change queue manager responsible for dispatching change events and triggering change handler functions.
  */
-class Queue {
+class Queue$1 {
   /**
    * Creates queue manager for the specified `Node` instance.
    * @param {Node} node - Reference to the owner node/element.
@@ -30110,7 +30109,7 @@ class Queue {
   }
 }
 
-class Queue$1 {
+class Queue {
   constructor() {
     this.reset();
   }
@@ -30136,7 +30135,7 @@ class Queue$1 {
       },
       __connected: true
     };
-    this.queue = new Queue(this.fakeNode);
+    this.queue = new Queue$1(this.fakeNode);
   }
   run() {
     describe('Queue', () => {
@@ -31082,7 +31081,7 @@ function runTests() {
     new Properties().run();
     new ProtoChain().run();
     new Binding().run();
-    new Queue$1().run();
+    new Queue().run();
     new Listeners().run();
     new Functions().run();
 
